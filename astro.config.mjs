@@ -27,7 +27,7 @@ import { pluginCustomCopyButton } from "./src/plugins/expressive-code/custom-cop
 // https://astro.build/config
 export default defineConfig({
 	site: "https://wiedergeburtme.github.io",
-	base: "fuwari",
+	base: "/fuwari",
 	trailingSlash: "always",
 	integrations: [
 		tailwind({
