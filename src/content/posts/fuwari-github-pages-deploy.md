@@ -1,8 +1,7 @@
-```markdown
 ---
 title: Fuwari 部落格 GitHub Pages 部署指南（免本地環境）
 published: 2026-10-21
-description: 從 Fork 到上線的完整流程：改配置、GitHub Actions、刪示範文、寫文章與常見錯誤排除。
+description: 從 Fork 到上線的完整流程：網站配置、GitHub Actions、文章管理與常見錯誤排除。
 image: ''
 tags: [Fuwari, Astro, GitHub Pages, 部落格, 教學]
 category: 教學
@@ -11,65 +10,47 @@ draft: false
 
 # Fuwari 部落格 GitHub Pages 部署指南（免本地環境）
 
-本篇整理自實際部署過程，目標是：**只在 GitHub 網頁操作**，不需本機安裝 Node / pnpm，也能完成配置、寫文與自動部署。
+本文介紹如何只透過 **GitHub 網頁介面** 建立及維護 Fuwari 部落格，不必在本機安裝 Node.js 或 pnpm。網站由 GitHub Actions 自動建置，並部署至 GitHub Pages。
 
----
+## 一、建立專案
 
-## 一、取得專案
+1. 開啟 [saicaca/fuwari](https://github.com/saicaca/fuwari)。
+2. 點選 **Fork**，或使用 **Use this template** 建立倉庫。
+3. 記下倉庫網址，例如 `https://github.com/username/fuwari`。
 
-1. 開啟 [saicaca/fuwari](https://github.com/saicaca/fuwari)
-2. 點 **Fork**（或使用 **Use this template** 建立新倉庫）
-3. 記住你的倉庫網址，例如：  
-   `https://github.com/你的使用者名稱/fuwari`
+## 二、修改網站配置
 
----
+### 2.1 `astro.config.mjs`
 
-## 二、必改配置檔
-
-### 1. `astro.config.mjs`（站點網址）
-
-路徑：倉庫根目錄的 `astro.config.mjs`
-
-重點修改：
+在倉庫根目錄找到 `astro.config.mjs`，確認站點網址與部署路徑：
 
 ```js
 export default defineConfig({
-  site: "https://你的使用者名稱.github.io",
-  base: "/倉庫名/",   // 若倉庫名是 username.github.io 則用 "/"
+  site: "https://username.github.io",
+  base: "/fuwari/",
   trailingSlash: "always",
-  // ...其餘保持
+  // 其餘原有配置保留
 });
 ```
 
-說明：
+以上僅示意需要修改的欄位，請勿刪除原檔案中其他必要配置及匯入。
 
-| 情境 | `site` 範例 | `base` |
-|------|-------------|--------|
-| 專案頁（倉庫名 ≠ username.github.io） | `https://username.github.io` | `/倉庫名/` |
-| 使用者首頁（倉庫名 = username.github.io） | `https://username.github.io` | `/` |
+| 網站類型 | `site` | `base` |
+| --- | --- | --- |
+| 使用者首頁（倉庫為 `username.github.io`） | `https://username.github.io` | `/` |
+| 專案頁面（倉庫為 `fuwari`） | `https://username.github.io` | `/fuwari/` |
 
-**不需要自訂域名也能用**，預設 `https://username.github.io/倉庫名/` 即可。
+專案頁面預設網址為 `https://username.github.io/fuwari/`，不必購買自訂域名。
 
-### 2. `src/config.ts`（站點資訊）
+### 2.2 `src/config.ts`
 
-路徑：`src/config.ts`
+依照原有配置結構，修改網站標題、副標題、語言（例如 `zh_TW`）、個人簡介、頭像、社群連結及導覽列。不同版本欄位可能有所差異，請以目前倉庫內容為準。
 
-建議至少改：
+## 三、設定 GitHub Pages 與 Actions
 
-- 站點標題、副標
-- 語言（如 `zh_TW` / `zh_CN`）
-- 個人簡介、頭像、社群連結
-- 導覽列項目
+### 3.1 建立部署工作流
 
----
-
-## 三、GitHub Pages + Actions 部署
-
-### 1. 建立工作流檔
-
-路徑：`.github/workflows/deploy.yml`（沒有就新建）
-
-範例內容（注意 **pnpm 版本** 要與專案一致）：
+如果專案尚無適用的 Pages 工作流，建立 `.github/workflows/deploy.yml`：
 
 ```yaml
 name: Deploy to GitHub Pages
@@ -99,7 +80,6 @@ jobs:
         uses: withastro/action@v4
         with:
           package-manager: pnpm@9.14.4
-          # 若 package.json 裡 pnpm 版本不同，請改成與 package.json 一致
 
   deploy:
     needs: build
@@ -113,139 +93,153 @@ jobs:
         uses: actions/deploy-pages@v4
 ```
 
-### 2. 開啟 GitHub Pages
+**注意：** `pnpm@9.14.4` 是範例，應與倉庫 `package.json` 的 `packageManager` 設定一致。如果專案已有部署工作流，優先修改現有檔案，避免重複部署。
 
-1. 倉庫 → **Settings** → **Pages**
-2. **Source** 選 **GitHub Actions**
-3. 推送後到 **Actions** 查看建置是否成功
+### 3.2 啟用 GitHub Pages
 
-### 3. 常見建置錯誤：pnpm 版本衝突
+1. 進入倉庫 **Settings → Pages**。
+2. 將 **Build and deployment → Source** 設為 **GitHub Actions**。
+3. 提交變更後，在 **Actions** 頁面查看建置與部署結果。
 
-錯誤類似：
+### 3.3 pnpm 版本衝突
 
-> Multiple versions of pnpm specified
+如果出現：
 
-處理方式：
+```text
+Multiple versions of pnpm specified
+```
 
-- 在 `deploy.yml` 的 `withastro/action` 裡明確指定：  
-  `package-manager: pnpm@9.14.4`  
-  （版本以你倉庫 `package.json` 為準）
-- 或拿掉手動指定，改讓 Action 自動偵測
-
-Node.js 棄用警告通常不影響建置，可先忽略。
-
----
+請檢查 `package.json` 中的 `packageManager` 與工作流中的 `package-manager` 是否一致；也可移除工作流內手動指定的版本，讓 Action 自動偵測。Node.js 棄用警告不一定代表建置失敗，應以實際錯誤日誌為準。
 
 ## 四、刪除示範文章
 
-示範文在：
+文章通常位於：
 
 ```text
 src/content/posts/
 ```
 
-常見檔案：`markdown.md`、`video.md`、`draft.md` 等，以及可能有的 `guide/` 資料夾。
+原始專案可能包含 `markdown.md`、`video.md`、`draft.md` 或 `guide/` 等示範內容，實際以所使用版本為準。
 
-**在 GitHub 網頁刪除：**
+在 GitHub 網頁中逐一開啟不需要的檔案，使用刪除功能並提交變更。Git 不追蹤空資料夾，因此刪除資料夾內全部檔案後，資料夾便不再顯示。重新部署成功後，已刪除的示範文章會從網站消失。
 
-1. 進入 `src/content/posts/`
-2. 點開檔案 → 右上角垃圾桶 → Commit  
-3. 資料夾可整包刪除
+## 五、建立新文章
 
-刪完並成功部署後，首頁示範文就會消失。
+1. 進入 `src/content/posts/`。
+2. 點選 **Add file → Create new file**。
+3. 輸入檔名，例如 `my-first-post.md`。
+4. 貼上以下內容並提交：
 
----
-
-## 五、新建文章（網頁操作）
-
-1. `src/content/posts/` → **Add file** → **Create new file**
-2. 檔名建議英文，例如：`my-first-post.md`
-3. 開頭必須有 **frontmatter**，範例：
-
-```yaml
+```markdown
 ---
 title: 我的第一篇文章
 published: 2026-10-21
-description: 這是摘要，會顯示在列表上
+description: 這是我的第一篇 Fuwari 部落格文章。
 image: ''
 tags: [生活, 記錄]
 category: 日常
 draft: false
 ---
 
-正文從這裡開始，支援 Markdown。
+# 我的第一篇文章
+
+歡迎來到我的部落格。
+
+## 關於本站
+
+本站使用 Fuwari 建立，並透過 GitHub Pages 自動部署。
 ```
 
-### Frontmatter 重點
+### Frontmatter 欄位說明
 
-| 欄位 | 說明 | 注意 |
-|------|------|------|
-| `title` | 標題 | 必填 |
-| `published` | 日期 | 必填，建議 `YYYY-MM-DD` |
-| `description` | 摘要 | 建議填 |
-| `image` | 封面 | 可空字串 `''` |
-| `tags` | 標籤 | 必須是陣列：`[A, B]` |
-| `category` | 分類 | 字串 |
-| `draft` | 草稿 | `true` 不會公開 |
+| 欄位 | 用途 | 範例 |
+| --- | --- | --- |
+| `title` | 文章標題 | `我的第一篇文章` |
+| `published` | 發布日期 | `2026-10-21` |
+| `description` | 文章摘要 | `簡短介紹` |
+| `image` | 封面圖片 | `''` |
+| `tags` | 標籤陣列 | `[生活, 記錄]` |
+| `category` | 文章分類 | `日常` |
+| `draft` | 是否為草稿 | `false` |
 
-### 封面圖
+封面可依專案支援的路徑規則引用本地圖片，或填入可公開存取的完整網址：
 
 ```yaml
-image: ./cover.jpg
+image: 'https://example.com/images/cover.jpg'
 ```
 
-圖片可放在與文章同一目錄，或使用完整 URL。
+## 六、常見錯誤排除
 
-### 常見建置失敗原因（文章相關）
+### 6.1 文章資料格式錯誤
 
-- **沒有 frontmatter**（整篇只有 `# 標題`）→ 必加 `---` 區塊  
-- `tags` 寫成字串而非陣列  
-- `published` 格式錯誤  
-- YAML 用了中文冒號 `：`  
+每篇文章應包含符合目前專案內容集合 Schema 的 Frontmatter。常見錯誤包括：
 
-錯誤堆疊常出現在：
+- 缺少開頭及結尾的 `---` 分隔線。
+- 將 `tags` 寫成單一字串，而非 `[標籤一, 標籤二]`。
+- `published` 日期格式不正確。
+- 使用中文冒號 `：` 代替 YAML 的英文冒號 `:`。
+- 將 `draft: false` 寫成不符合預期的值。
+
+如果標題含有冒號等特殊字元，建議加上引號：
+
+```yaml
+title: '閱讀筆記：自由與責任'
+```
+
+### 6.2 Astro 建置失敗
+
+若日誌出現：
 
 ```text
-.../astro/dist/content/loaders/glob.js ... syncData
+InvalidContentEntryDataError
 ```
 
-請往日誌上方找 `InvalidContentEntryDataError` 或 schema 相關訊息，對應修改該篇 frontmatter。
+或堆疊包含：
 
----
+```text
+astro/dist/content/loaders/glob.js
+syncData
+```
 
-## 六、部署流程總覽
+請向上查找第一個實際錯誤，確認是哪篇文章或哪個欄位不符合 Schema，再修改該檔案。最後的 `Process completed with exit code 1` 只表示執行失敗，並非根本原因。
+
+### 6.3 網站樣式或圖片消失
+
+確認 `astro.config.mjs` 中的 `site` 和 `base` 是否與 Pages 網址一致。專案頁面若錯誤地將 `base` 設為 `/`，可能導致靜態資源路徑錯誤。
+
+### 6.4 Actions 成功但網站未更新
+
+確認 Pages 的 Source 是 **GitHub Actions**，最新部署工作流已成功完成，且瀏覽器沒有顯示快取內容。也要確認文章變更已提交至工作流監聽的分支，例如 `main`。
+
+## 七、部署流程總覽
 
 ```text
 Fork / 建立倉庫
-    ↓
-改 astro.config.mjs（site、base）
-    ↓
-改 src/config.ts（站點資訊）
-    ↓
-新增 .github/workflows/deploy.yml
-    ↓
-Settings → Pages → Source: GitHub Actions
-    ↓
-刪示範文、寫自己的文章（含正確 frontmatter）
-    ↓
-Commit / Push → Actions 自動建置部署
-    ↓
-開啟 https://username.github.io/倉庫名/
+        ↓
+修改 astro.config.mjs（site、base）
+        ↓
+修改 src/config.ts（站點資訊）
+        ↓
+建立或調整 deploy.yml
+        ↓
+Settings → Pages → GitHub Actions
+        ↓
+刪除示範文並建立自己的文章
+        ↓
+Commit → Actions 自動建置與部署
+        ↓
+開啟 https://username.github.io/fuwari/
 ```
 
-之後每次改文章或配置並推送到 `main`，就會自動重新部署。
+往後每次修改文章或配置，只要將變更提交到 `main`，就會觸發自動部署。
 
----
+## 八、補充說明
 
-## 七、補充說明
-
-- **自訂域名**：非必須；要用再在 Pages 設定與 DNS 綁定即可。  
-- **免本地預覽**：全程用 GitHub 網頁編輯 + Actions 即可；有電腦時再本機 `pnpm install` / `pnpm dev` 預覽更方便。  
-- **寫文工具**：可用 GitHub 網頁、或本機 / 手機 Markdown 編輯器寫好後貼上。
-
----
+- **自訂域名：** 非必要；日後可在 Pages 設定及 DNS 中配置。
+- **免本地環境：** 全程可使用 GitHub 網頁編輯及 Actions 建置。
+- **本地預覽：** 如果日後有電腦，可依專案指定的套件管理器安裝依賴並啟動開發伺服器。
+- **寫文工具：** 可直接使用 GitHub 網頁，也可以先在手機或電腦的 Markdown 編輯器中完成文章，再貼入倉庫。
 
 ## 結語
 
-Fuwari 搭配 GitHub Pages 的門檻主要在：站點 `site`/`base`、Actions 的 pnpm 版本，以及每篇文章的 frontmatter。把這三點處理好，就能穩定用「只改網頁、自動上線」的方式維護部落格。
-```
+Fuwari 搭配 GitHub Pages，最需要留意的是站點 `site` / `base` 配置、Actions 使用的套件管理器版本，以及每篇文章的 Frontmatter。完成初始設定後，日常維護便可以簡化為：**編輯 Markdown、提交變更、等待自動上線。**
